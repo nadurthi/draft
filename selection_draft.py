@@ -13,29 +13,33 @@ import random
 import matplotlib.pyplot as plt
 from gekko import GEKKO
 
-df=pd.read_csv('G:\My Drive\Cricket\Preseries Player Stats - Copy - Static.csv')
+df=pd.read_csv('/home/nadurthi/Downloads/draft-main/Preseries Player Stats - Copy - Static.csv')
 df.reset_index(inplace=True)
 df['cost'] = 100*(df['batting_score']+df['bowling_score']+df['allrounder_score']+df['fielding_score'])
 
 
 # Batting optimization
-N_batters=[1,5]
-N_bowlers=[0,0]
-N_keeper=[0,0]
+N_batters=[3,7]
+N_bowlers=[3,7]
+N_keeper=[1,1]
 
-batter_cost_range=[200000,5000000]
-bowler_cost_range=[100000,500000]
-keeper_cost_range=[100000,500000]
+batter_cost_range=[5000,500000]
+bowler_cost_range=[5000,500000]
+keeper_cost_range=[5000,500000]
 
-max_batters_per_country =7
-max_bowlers_per_country =7
+max_batters_per_country =4
+max_bowlers_per_country =4
 max_keepers_per_country =1
 
-max_cost = 5000000
+max_cost = 500000
+total_players = 11
+
+
+
 
 qtiles = [.25, .5,.75,1]
 
-total_players = 3
+
 
 
 # def generate_team(df):
@@ -134,8 +138,8 @@ for s in allround_ind_pick:
 ind_picks =set.union(set(merge_batter_ind_pick),set(merge_bowler_ind_pick),set(merge_keeper_ind_pick),set(merge_allround_ind_pick))
 
 dfpick = df.loc[list(ind_picks),:]
+# dfpick=df.copy()
 
-# m.Equation(np.sum(bat_vars)>=N_batters[0])
 
 ##  --------bulding cost
 
@@ -215,7 +219,7 @@ totalcost=0
 for ind in dfpick.index: 
     totalcost =totalcost+dfpick.loc[ind,'vars']*dfpick.loc[ind,'cost']
 
-m.Equation(totalcost<=max_cost)
+# m.Equation(totalcost<=max_cost)
 
     
 m.Maximize(totalcost)
@@ -226,29 +230,6 @@ m.options.IMODE = 3 #steady state optimization
 #Solve simulation
 m.solve()
 
-varsols = [int(v.value[0])==1 for v in df['vars']]
-df_sol=[]
-for ind in dfbat_opt.index:
-    if dfbat_opt.loc[ind,'vars'].value[0]==1:
-        df_sol.append({'type':'batter',
-                'name':dfbat_opt.loc[ind,'name'],
-                'country':dfbat_opt.loc[ind,'team'],
-                'cost':dfbat_opt.loc[ind,'cost']})
-for ind in dfbowl_opt.index:
-    if dfbowl_opt.loc[ind,'vars'].value[0]==1:
-        df_sol.append({'type':'bowler',
-                       'name':dfbowl_opt.loc[ind,'name'],
-                'country':dfbowl_opt.loc[ind,'team'],
-                'cost':dfbowl_opt.loc[ind,'cost']})
-for ind in dfkeeper_opt.index:
-    if dfkeeper_opt.loc[ind,'vars'].value[0]==1:
-        df_sol.append({'type':'keeper',
-                       'name':dfkeeper_opt.loc[ind,'name'],
-                'country':dfkeeper_opt.loc[ind,'team'],
-                'cost':dfkeeper_opt.loc[ind,'cost']})        
+dfpick['vars_solve']= dfpick['vars'].apply(lambda x: int(x.value[0]))
 
-df_sol = pd.DataFrame.from_records(df_sol)
-df_sol
-# return df_sol
-
-
+dfpick[dfpick['vars_solve']==1][['team','name','is_batter','is_bowler','is_keeper','cost']]
